@@ -13,6 +13,7 @@ type (
 		BpmnProcessID   string `md:"bpmnProcessID,required"`
 		ServiceType     string `md:"serviceType,required"`
 		Command         string `md:"command,required"`
+		UsePlainTextConnection bool `md:"usePlainTextConnection"`
 	}
 
 	// HandlerSettings struct
@@ -49,6 +50,7 @@ func (s *Settings) FromMap(values map[string]interface{}) error {
 		bpmnProcessID   string
 		serviceType     string
 		command         string
+		usePlainTextConnection bool
 	)
 
 	zeebeBrokerHost, err = coerce.ToString(values["zeebeBrokerHost"])
@@ -81,6 +83,12 @@ func (s *Settings) FromMap(values map[string]interface{}) error {
 	}
 	s.Command = command
 
+	usePlainTextConnection, err = coerce.ToBool(values["usePlainTextConnection"])
+	if err != nil {
+		return err
+	}
+	s.UsePlainTextConnection = usePlainTextConnection
+
 	return nil
 }
 
@@ -92,6 +100,7 @@ func (s *Settings) ToMap() map[string]interface{} {
 		"bpmnProcessID":   s.BpmnProcessID,
 		"serviceType":   	 s.ServiceType,
 		"command":         s.Command,
+		"usePlainTextConnection": s.UsePlainTextConnection,
 	}
 }
 
