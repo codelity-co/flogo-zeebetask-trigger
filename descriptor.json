@@ -1,7 +1,7 @@
 {
   "name": "flogo-zeebetask-trigger",
   "type": "flogo:trigger",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "Codelity Flogo Zeebe Task Trigger",
   "description": "Codelity Flogo Zeebe Task Trigger",
   "homepage": "https://github.com/codelity-co/flogo-zeebetask-trigger",
