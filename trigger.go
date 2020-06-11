@@ -1,9 +1,12 @@
 package zeebetask
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/project-flogo/core/trigger"
+	"github.com/zeebe-io/zeebe/clients/go/pkg/entities"
+	"github.com/zeebe-io/zeebe/clients/go/pkg/worker"
 	"github.com/zeebe-io/zeebe/clients/go/pkg/zbc"
 )
 
@@ -21,6 +24,7 @@ type (
 	// Trigger struct
 	Trigger struct {
 		triggerConfig *trigger.Config
+		triggerInitContext trigger.InitContext
 		natsHandlers  []*Handler
 	}
 )
@@ -48,6 +52,7 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 		zeebeClient zbc.Client
 	)
 
+	t.triggerInitContext = ctx
 	logger := ctx.Logger()
 
 	s := &Settings{}
@@ -72,7 +77,7 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 		// Connect to Zeebe broker
 		zeebeClient, err = zbc.NewClient(&zbc.ClientConfig{
 			GatewayAddress:         fmt.Sprintf("%v:%v", s.ZeebeBrokerHost, s.ZeebeBrokerPort),
-			UsePlaintextConnection: true,
+			UsePlaintextConnection: s.UsePlainTextConnection,
 		})
 		if err != nil {
 			logger.Errorf("Zeebe broker connection error: %v", err)
@@ -85,11 +90,13 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 
 		// Create Trigger Handler
 		natsHandler := &Handler{
-			zeebeClient:   zeebeClient,
+			triggerInitContext: ctx,
+			zeebeClient: zeebeClient,
 			bpmnProcessID: s.BpmnProcessID,
 			serviceType:   s.ServiceType,
 			command:       s.Command,
 			stopChannel:   stopChannel,
+			triggerHandler: handler,
 		}
 
 		// Append handler
@@ -110,28 +117,98 @@ func (t *Trigger) Start() error {
 
 // Stop implements util.Managed.Stop
 func (t *Trigger) Stop() error {
+	var err error
 	for _, handler := range t.natsHandlers {
-		_ = handler.Stop()
+		err = handler.Stop()
+		if err != nil {
+			t.triggerInitContext.Logger().Errorf("Trigger stop error: %v", err)
+			return err
+		}
+		handler.zeebeClient.Close()
 	}
 	return nil
 }
 
 // Handler is Zeebe task handler
 type Handler struct {
+	triggerInitContext trigger.InitContext
 	zeebeClient   zbc.Client
 	bpmnProcessID string
 	serviceType   string
 	command       string
 	stopChannel   chan bool
+	jobWorker 		worker.JobWorker
+	triggerHandler trigger.Handler
 }
 
 // Start starts the handler
 func (h *Handler) Start() error {
+	h.jobWorker = h.zeebeClient.NewJobWorker().JobType(h.serviceType).Handler(h.handleJob).Open()
 	return nil
 }
 
 // Stop implements util.Managed.Stop
 func (h *Handler) Stop() error {
+	h.stopChannel <- true
 	//stop servers/services if necessary
+	h.jobWorker.Close()
 	return nil
+}
+
+func (h *Handler) handleJob(client worker.JobClient, job entities.Job) {
+	logger := h.triggerInitContext.Logger()
+
+	jobKey := job.GetKey()
+	logger.Debug("JobKey: ", jobKey)
+
+	headers, err := job.GetCustomHeadersAsMap()
+	if err != nil {
+		logger.Errorf("job.GetCustomerHeadersAsMap error: %v", err)
+		failJob(client, job)
+		return
+	}
+	logger.Debug("Headers: ", headers)
+
+	variables, err := job.GetVariablesAsMap()
+	if err != nil {
+		logger.Errorf("job.GetVariablesAsMap error: %v", err)
+		failJob(client, job)
+		return
+	}
+	logger.Debug("Variables: ", variables)
+
+	output := &Output{}
+	result, err := h.triggerHandler.Handle(context.Background(), output.ToMap())
+	if err != nil {
+		logger.Errorf("triggerHandler.Handle error: %v", err)
+		failJob(client, job)
+		return
+	}
+
+	reply := &Reply{}
+	err = reply.FromMap(result)
+	if err != nil {
+		logger.Errorf("Parsing reply error: %v", err)
+		failJob(client, job)
+		return
+	}
+	
+	request, err := client.NewCompleteJobCommand().JobKey(jobKey).VariablesFromMap(result)
+	if err != nil {
+		// failed to set the updated variables
+		failJob(client, job)
+		return
+	}
+	_, err = request.Send(context.Background())
+	if err != nil {
+		logger.Errorf("Complete job request send error: %v", err)
+		failJob(client, job)
+		return
+	}
+
+	logger.Info("Complete job", jobKey, "of type", job.Type)
+}
+
+func failJob(client worker.JobClient, job entities.Job) {
+	_, _ = client.NewFailJobCommand().JobKey(job.GetKey()).Retries(job.Retries - 1).Send(context.Background())
 }
