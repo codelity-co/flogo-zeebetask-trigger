@@ -27,17 +27,35 @@
       "required": true
     },
     {
-      "name": "command",
-      "type": "string",
+      "name": "usePlainTextConnection",
+      "type": "boolean",
       "required": true,
-      "allowed": ["Create", "Cancel"]
+      "default": true
     }
   ],
+  "handler": {
+    "settings": [
+      {
+        "name": "concurrency",
+        "type": "integer",
+        "description": "Job concurrency"
+      },
+      {
+        "name": "maxActiveJobs",
+        "type": "integer",
+        "description": "Max active jobs"
+      }
+    ]
+  },
   "output": [
     {
-      "name": "data",
-      "type": "object",
+      "name": "status",
+      "type": "text",
       "required": true
+    },
+    {
+      "name": "result",
+      "type": "any"
     }
   ],
   "reply": [
@@ -50,9 +68,5 @@
       "name": "result",
       "type": "any"
     }
-  ],
-  "handler": {
-    "settings": [
-    ]
-  }
+  ]
 }

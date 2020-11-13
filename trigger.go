@@ -3,6 +3,7 @@ package zeebetask
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/project-flogo/core/trigger"
 	"github.com/zeebe-io/zeebe/clients/go/pkg/entities"
@@ -25,7 +26,7 @@ type (
 	Trigger struct {
 		triggerConfig *trigger.Config
 		triggerInitContext trigger.InitContext
-		natsHandlers  []*Handler
+		zeebeHandlers  []*Handler
 	}
 )
 
@@ -89,18 +90,18 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 		stopChannel := make(chan bool)
 
 		// Create Trigger Handler
-		natsHandler := &Handler{
+		zeebeHandler := &Handler{
 			triggerInitContext: ctx,
 			zeebeClient: zeebeClient,
 			bpmnProcessID: s.BpmnProcessID,
 			serviceType:   s.ServiceType,
-			command:       s.Command,
 			stopChannel:   stopChannel,
+			triggerHandlerSettings: handlerSettings,
 			triggerHandler: handler,
 		}
 
 		// Append handler
-		t.natsHandlers = append(t.natsHandlers, natsHandler)
+		t.zeebeHandlers = append(t.zeebeHandlers, zeebeHandler)
 		logger.Debugf("Registered trigger handler successfully")
 	}
 
@@ -109,7 +110,7 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 
 // Start implements util.Managed.Start
 func (t *Trigger) Start() error {
-	for _, handler := range t.natsHandlers {
+	for _, handler := range t.zeebeHandlers {
 		_ = handler.Start()
 	}
 	return nil
@@ -118,7 +119,7 @@ func (t *Trigger) Start() error {
 // Stop implements util.Managed.Stop
 func (t *Trigger) Stop() error {
 	var err error
-	for _, handler := range t.natsHandlers {
+	for _, handler := range t.zeebeHandlers {
 		err = handler.Stop()
 		if err != nil {
 			t.triggerInitContext.Logger().Errorf("Trigger stop error: %v", err)
@@ -135,15 +136,60 @@ type Handler struct {
 	zeebeClient   zbc.Client
 	bpmnProcessID string
 	serviceType   string
-	command       string
 	stopChannel   chan bool
 	jobWorker 		worker.JobWorker
+	triggerHandlerSettings *HandlerSettings
 	triggerHandler trigger.Handler
 }
 
 // Start starts the handler
 func (h *Handler) Start() error {
-	h.jobWorker = h.zeebeClient.NewJobWorker().JobType(h.serviceType).Handler(h.handleJob).Open()
+
+	step3 := h.zeebeClient.NewJobWorker().JobType(h.serviceType).Handler(h.handleJob)
+
+	if h.triggerHandlerSettings.JobConcurrency > 0 {
+		step3 = step3.Concurrency(h.triggerHandlerSettings.JobConcurrency)
+	}
+
+	if h.triggerHandlerSettings.MaxActiveJobs > 0 {
+		step3 = step3.MaxJobsActive(h.triggerHandlerSettings.JobConcurrency)
+	}
+
+	if h.triggerHandlerSettings.PollInterval != "" {
+
+		pollInterval, err := time.ParseDuration(h.triggerHandlerSettings.PollInterval)
+		if err != nil {
+			return err
+		}
+
+		step3 = step3.PollInterval(pollInterval)
+
+	}
+
+	if h.triggerHandlerSettings.PollThreshold > 0.0 {
+		step3 = step3.PollThreshold(h.triggerHandlerSettings.PollThreshold)
+	}
+
+	if h.triggerHandlerSettings.RequestTimeout != ""  {
+		requestTimeout, err := time.ParseDuration(h.triggerHandlerSettings.RequestTimeout)
+		if err != nil {
+			return err
+		}
+
+		step3 = step3.RequestTimeout(requestTimeout)
+	}
+
+	if h.triggerHandlerSettings.Timeout != ""  {
+		timeout, err := time.ParseDuration(h.triggerHandlerSettings.Timeout)
+		if err != nil {
+			return err
+		}
+
+		step3 = step3.Timeout(timeout)
+	}
+
+	h.jobWorker = step3.Open()
+
 	return nil
 }
 
@@ -164,7 +210,7 @@ func (h *Handler) handleJob(client worker.JobClient, job entities.Job) {
 	headers, err := job.GetCustomHeadersAsMap()
 	if err != nil {
 		logger.Errorf("job.GetCustomerHeadersAsMap error: %v", err)
-		failJob(client, job)
+		failJob(client, job, err)
 		return
 	}
 	logger.Debug("Headers: ", headers)
@@ -172,7 +218,7 @@ func (h *Handler) handleJob(client worker.JobClient, job entities.Job) {
 	variables, err := job.GetVariablesAsMap()
 	if err != nil {
 		logger.Errorf("job.GetVariablesAsMap error: %v", err)
-		failJob(client, job)
+		failJob(client, job, err)
 		return
 	}
 	logger.Debug("Variables: ", variables)
@@ -181,7 +227,7 @@ func (h *Handler) handleJob(client worker.JobClient, job entities.Job) {
 	result, err := h.triggerHandler.Handle(context.Background(), output.ToMap())
 	if err != nil {
 		logger.Errorf("triggerHandler.Handle error: %v", err)
-		failJob(client, job)
+		failJob(client, job, err)
 		return
 	}
 
@@ -189,26 +235,28 @@ func (h *Handler) handleJob(client worker.JobClient, job entities.Job) {
 	err = reply.FromMap(result)
 	if err != nil {
 		logger.Errorf("Parsing reply error: %v", err)
-		failJob(client, job)
+		failJob(client, job, err)
 		return
 	}
 	
 	request, err := client.NewCompleteJobCommand().JobKey(jobKey).VariablesFromMap(result)
 	if err != nil {
 		// failed to set the updated variables
-		failJob(client, job)
+		failJob(client, job, err)
 		return
 	}
+
 	_, err = request.Send(context.Background())
 	if err != nil {
 		logger.Errorf("Complete job request send error: %v", err)
-		failJob(client, job)
+		failJob(client, job, err)
 		return
 	}
 
 	logger.Info("Complete job", jobKey, "of type", job.Type)
 }
 
-func failJob(client worker.JobClient, job entities.Job) {
-	_, _ = client.NewFailJobCommand().JobKey(job.GetKey()).Retries(job.Retries - 1).Send(context.Background())
+func failJob(client worker.JobClient, job entities.Job, err error) {
+	request := client.NewFailJobCommand().JobKey(job.GetKey()).Retries(job.Retries - 1).ErrorMessage(err.Error())
+	_, _ = request.Send(context.Background())
 }
