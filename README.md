@@ -44,7 +44,7 @@ flogo install github.com/codelity-co/flogo-zeebeworkflow-activity
 
 ```json
 {
-  "id": "flogo-zeebetask-trigger",
+  "id": "flogo-zeebeworkflow-trigger",
   "name": "Codelity Flogo Zeebe Task Trigger",
   "ref": "github.com/codelity-co/flogo-zeebe-trigger",
   "settings": {

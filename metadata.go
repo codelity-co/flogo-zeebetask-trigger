@@ -71,8 +71,8 @@ func (s *Settings) ToMap() map[string]interface{} {
 // HandlerSettings struct
 type HandlerSettings struct{
 	JobConcurrency int `md:"jobConcurrency"`
-	MaxActiveJobs int `md:"maxActiveJobs`
-	PollInterval string `md:pollInterval` 
+	MaxActiveJobs int `md:"maxActiveJobs"`
+	PollInterval string `md:"pollInterval"` 
 	PollThreshold float64 `md:"pollThreshold"`
 	RequestTimeout string `md:"requestTimeout"`
 	Timeout string `md:"timeout"`

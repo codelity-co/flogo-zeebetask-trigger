@@ -1,10 +1,10 @@
 {
   "name": "flogo-zeebeworkflow-trigger",
   "type": "flogo:trigger",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "title": "Codelity Flogo Zeebe Task Trigger",
   "description": "Codelity Flogo Zeebe Task Trigger",
-  "homepage": "https://github.com/codelity-co/flogo-zeebetask-trigger",
+  "homepage": "https://github.com/codelity-co/flogo-zeebeworkflow-trigger",
   "settings": [
     {
       "name": "zeebeBrokerHost",
