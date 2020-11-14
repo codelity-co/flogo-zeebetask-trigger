@@ -1,4 +1,4 @@
-module github.com/codelity.co/flogo-zeebeworkflow-trigger
+module github.com/codelity-co/flogo-zeebeworkflow-trigger
 
 go 1.13
 
