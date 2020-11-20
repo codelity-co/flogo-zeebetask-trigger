@@ -22,7 +22,6 @@ flogo install github.com/codelity-co/flogo-zeebeworkflow-activity
   | :---                | :---   | :---
   | zeebeBrokerHost     | string | Zeebe broker host - ***REQUIRED***
   | zeebeBrokerPort     | int    | Zeebe broker port, default 26500 - ***REQUIRED***
-  | bpmnProcessID       | string | BPMN process ID - ***REQUIRED***
   | serviceType         | string | BPMN Task Service Type  - ***REQUIRED***
   | command             | string | Zeebe command, Create or Cancel - ***REQUIRED***
 
@@ -50,7 +49,6 @@ flogo install github.com/codelity-co/flogo-zeebeworkflow-activity
   "settings": {
     "zeebeBrokerHost": "localhost",
     "zeebeBrokerPort": 26500,
-    "bpmnProcessID": "order-process",
     "serviceType": "order-service",
     "command": "Create"
   },

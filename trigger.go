@@ -17,18 +17,8 @@ func init() {
 	_ = trigger.Register(&Trigger{}, &Factory{})
 }
 
-type (
-
-	// Factory of Trigger
-	Factory struct{}
-
-	// Trigger struct
-	Trigger struct {
-		triggerConfig *trigger.Config
-		triggerInitContext trigger.InitContext
-		zeebeHandlers  []*Handler
-	}
-)
+//Factory of Trigger
+type Factory struct{}
 
 // New method of Trigger Factory
 func (*Factory) New(config *trigger.Config) (trigger.Trigger, error) {
@@ -38,6 +28,13 @@ func (*Factory) New(config *trigger.Config) (trigger.Trigger, error) {
 // Metadata method of Trigger Factory
 func (f *Factory) Metadata() *trigger.Metadata {
 	return triggerMd
+}
+
+// Trigger struct
+type Trigger struct {
+	triggerConfig *trigger.Config
+	triggerInitContext trigger.InitContext
+	zeebeHandlers  []*Handler
 }
 
 // Metadata implements trigger.Trigger.Metadata
@@ -93,7 +90,6 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 		zeebeHandler := &Handler{
 			triggerInitContext: ctx,
 			zeebeClient: zeebeClient,
-			bpmnProcessID: s.BpmnProcessID,
 			serviceType:   s.ServiceType,
 			stopChannel:   stopChannel,
 			triggerHandlerSettings: handlerSettings,
@@ -134,7 +130,6 @@ func (t *Trigger) Stop() error {
 type Handler struct {
 	triggerInitContext trigger.InitContext
 	zeebeClient   zbc.Client
-	bpmnProcessID string
 	serviceType   string
 	stopChannel   chan bool
 	jobWorker 		worker.JobWorker
