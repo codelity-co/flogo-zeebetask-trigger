@@ -8,7 +8,6 @@ import (
 type Settings struct {
 	ZeebeBrokerHost string `md:"zeebeBrokerHost,required"`
 	ZeebeBrokerPort int    `md:"zeebeBrokerPort,required"`
-	BpmnProcessID   string `md:"bpmnProcessID,required"`
 	ServiceType     string `md:"serviceType,required"`
 	UsePlainTextConnection bool `md:"usePlainTextConnection"`
 }
@@ -19,7 +18,6 @@ func (s *Settings) FromMap(values map[string]interface{}) error {
 		err             error
 		zeebeBrokerHost string
 		zeebeBrokerPort int
-		bpmnProcessID   string
 		serviceType     string
 		usePlainTextConnection bool
 	)
@@ -35,12 +33,6 @@ func (s *Settings) FromMap(values map[string]interface{}) error {
 		return err
 	}
 	s.ZeebeBrokerPort = zeebeBrokerPort
-
-	bpmnProcessID, err = coerce.ToString(values["bpmnProcessID"])
-	if err != nil {
-		return err
-	}
-	s.BpmnProcessID = bpmnProcessID
 
 	serviceType, err = coerce.ToString(values["serviceType"])
 	if err != nil {
@@ -62,7 +54,6 @@ func (s *Settings) ToMap() map[string]interface{} {
 	return map[string]interface{}{
 		"zeebeBrokerHost": s.ZeebeBrokerHost,
 		"zeebeBrokerPort": s.ZeebeBrokerPort,
-		"bpmnProcessID":   s.BpmnProcessID,
 		"serviceType":   	 s.ServiceType,
 		"usePlainTextConnection": s.UsePlainTextConnection,
 	}

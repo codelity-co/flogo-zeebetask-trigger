@@ -17,11 +17,6 @@
       "required": true
     },
     {
-      "name": "bpmnProcessID",
-      "type": "string",
-      "required": true
-    },
-    {
       "name": "serviceType",
       "type": "string",
       "required": true
