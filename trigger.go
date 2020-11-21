@@ -72,11 +72,15 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 		logger.Debugf("handlerSettings: %v", handlerSettings)
 		logger.Infof("Mapped handler settings successfully")
 
-		// Connect to Zeebe broker
-		zeebeClient, err = zbc.NewClient(&zbc.ClientConfig{
+    zeebeClientConfig := &zbc.ClientConfig{
 			GatewayAddress:         fmt.Sprintf("%v:%v", s.ZeebeBrokerHost, s.ZeebeBrokerPort),
 			UsePlaintextConnection: s.UsePlainTextConnection,
-		})
+		}
+
+		//TODO: add credential provider
+
+		// Connect to Zeebe broker
+		zeebeClient, err = zbc.NewClient(zeebeClientConfig)
 		if err != nil {
 			logger.Errorf("Zeebe broker connection error: %v", err)
 			return err
@@ -116,6 +120,8 @@ func (t *Trigger) Start() error {
 func (t *Trigger) Stop() error {
 	var err error
 	for _, handler := range t.zeebeHandlers {
+		handler.jobWorker.Close()
+		handler.jobWorker.AwaitClose()
 		err = handler.Stop()
 		if err != nil {
 			t.triggerInitContext.Logger().Errorf("Trigger stop error: %v", err)
@@ -150,9 +156,9 @@ func (h *Handler) Start() error {
 		step3 = step3.MaxJobsActive(h.triggerHandlerSettings.JobConcurrency)
 	}
 
-	if h.triggerHandlerSettings.PollInterval != "" {
+	if h.triggerHandlerSettings.PollIntervalDurationString != "" {
 
-		pollInterval, err := time.ParseDuration(h.triggerHandlerSettings.PollInterval)
+		pollInterval, err := time.ParseDuration(h.triggerHandlerSettings.PollIntervalDurationString)
 		if err != nil {
 			return err
 		}
@@ -165,8 +171,8 @@ func (h *Handler) Start() error {
 		step3 = step3.PollThreshold(h.triggerHandlerSettings.PollThreshold)
 	}
 
-	if h.triggerHandlerSettings.RequestTimeout != ""  {
-		requestTimeout, err := time.ParseDuration(h.triggerHandlerSettings.RequestTimeout)
+	if h.triggerHandlerSettings.RequestTimeoutDurationString != ""  {
+		requestTimeout, err := time.ParseDuration(h.triggerHandlerSettings.RequestTimeoutDurationString)
 		if err != nil {
 			return err
 		}
@@ -174,8 +180,8 @@ func (h *Handler) Start() error {
 		step3 = step3.RequestTimeout(requestTimeout)
 	}
 
-	if h.triggerHandlerSettings.Timeout != ""  {
-		timeout, err := time.ParseDuration(h.triggerHandlerSettings.Timeout)
+	if h.triggerHandlerSettings.TimeoutDurationString != ""  {
+		timeout, err := time.ParseDuration(h.triggerHandlerSettings.TimeoutDurationString)
 		if err != nil {
 			return err
 		}
