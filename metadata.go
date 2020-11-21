@@ -6,20 +6,34 @@ import (
 
 // Settings struct
 type Settings struct {
-	ZeebeBrokerHost string `md:"zeebeBrokerHost,required"`
-	ZeebeBrokerPort int    `md:"zeebeBrokerPort,required"`
-	ServiceType     string `md:"serviceType,required"`
-	UsePlainTextConnection bool `md:"usePlainTextConnection"`
+	ZeebeBrokerHost        string `md:"zeebeBrokerHost,required"`
+	ZeebeBrokerPort        int    `md:"zeebeBrokerPort,required"`
+	ServiceType            string `md:"serviceType,required"`
+	UsePlainTextConnection bool   `md:"usePlainTextConnection"`
+	CaCertificatePath      string `md:"caCertificatePath"`
+	Token                  string `md:"token"`
+	ClientID               string `md:"clientID"`
+	ClientSecret           string `md:"clientSecret"`
+	AudienceEndpoint       string `md:"audienceEndpoint"`
+	AuthorizationServerUrl string `md:"authorizationServerUrl"`
+	TimeoutDurationString  string `md:"timeoutDurationString"`
 }
 
 // FromMap method of Settings
 func (s *Settings) FromMap(values map[string]interface{}) error {
 	var (
-		err             error
-		zeebeBrokerHost string
-		zeebeBrokerPort int
-		serviceType     string
+		err                    error
+		zeebeBrokerHost        string
+		zeebeBrokerPort        int
+		serviceType            string
 		usePlainTextConnection bool
+		caCertificatePath      string
+		token                  string
+		clientID               string
+		clientSecret           string
+		audienceEndpoint       string
+		authorizationServerUrl string
+		timeoutDurationString  string
 	)
 
 	zeebeBrokerHost, err = coerce.ToString(values["zeebeBrokerHost"])
@@ -46,39 +60,88 @@ func (s *Settings) FromMap(values map[string]interface{}) error {
 	}
 	s.UsePlainTextConnection = usePlainTextConnection
 
+	caCertificatePath, err = coerce.ToString(values["caCertificatePath"])
+	if err != nil {
+		return err
+	}
+	s.CaCertificatePath = caCertificatePath
+
+	token, err = coerce.ToString(values["token"])
+	if err != nil {
+		return err
+	}
+	s.Token = token
+
+	clientID, err = coerce.ToString(values["clientID"])
+	if err != nil {
+		return err
+	}
+	s.ClientID = clientID
+
+	clientSecret, err = coerce.ToString(values["clientSecret"])
+	if err != nil {
+		return err
+	}
+	s.ClientSecret = clientSecret
+
+	audienceEndpoint, err = coerce.ToString(values["audienceEndpoint"])
+	if err != nil {
+		return err
+	}
+	s.AudienceEndpoint = audienceEndpoint
+
+	authorizationServerUrl, err = coerce.ToString(values["authorizationServerUrl"])
+	if err != nil {
+		return err
+	}
+	s.AuthorizationServerUrl = authorizationServerUrl
+
+	timeoutDurationString, err = coerce.ToString(values["timeoutDurationString"])
+	if err != nil {
+		return err
+	}
+	s.TimeoutDurationString = timeoutDurationString
+
 	return nil
 }
 
 // ToMap method of Settings
 func (s *Settings) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"zeebeBrokerHost": s.ZeebeBrokerHost,
-		"zeebeBrokerPort": s.ZeebeBrokerPort,
-		"serviceType":   	 s.ServiceType,
+		"zeebeBrokerHost":        s.ZeebeBrokerHost,
+		"zeebeBrokerPort":        s.ZeebeBrokerPort,
+		"serviceType":            s.ServiceType,
 		"usePlainTextConnection": s.UsePlainTextConnection,
+		"caCertificatePath":      s.CaCertificatePath,
+		"token":                  s.Token,
+		"clientID":               s.ClientID,
+		"clientSecret":           s.ClientSecret,
+		"audienceEndpoint":       s.AudienceEndpoint,
+		"authorizationServerUrl": s.AuthorizationServerUrl,
+		"timeoutDurationString":  s.TimeoutDurationString,
 	}
 }
 
 // HandlerSettings struct
-type HandlerSettings struct{
-	JobConcurrency int `md:"jobConcurrency"`
-	MaxActiveJobs int `md:"maxActiveJobs"`
-	PollInterval string `md:"pollInterval"` 
-	PollThreshold float64 `md:"pollThreshold"`
-	RequestTimeout string `md:"requestTimeout"`
-	Timeout string `md:"timeout"`
+type HandlerSettings struct {
+	JobConcurrency               int     `md:"jobConcurrency"`
+	MaxActiveJobs                int     `md:"maxActiveJobs"`
+	PollIntervalDurationString   string  `md:"pollIntervalDurationString"`
+	PollThreshold                float64 `md:"pollThreshold"`
+	RequestTimeoutDurationString string  `md:"requestTimeoutDurationString"`
+	TimeoutDurationString        string  `md:"timeoutDurationString"`
 }
 
 // FromMap method of HandlerSettings
 func (hs *HandlerSettings) FromMap(values map[string]interface{}) error {
 	var (
-		err  error
-		jobConcurrency int
-		maxActiveJobs int
-		pollInterval string
-		pollThreshold float64
-		requestTimeout string
-		timeout string
+		err                          error
+		jobConcurrency               int
+		maxActiveJobs                int
+		pollIntervalDurationString   string
+		pollThreshold                float64
+		requestTimeoutDurationString string
+		timeoutDurationString        string
 	)
 
 	jobConcurrency, err = coerce.ToInt(values["jobConcurrency"])
@@ -91,7 +154,7 @@ func (hs *HandlerSettings) FromMap(values map[string]interface{}) error {
 		return err
 	}
 
-	pollInterval, err = coerce.ToString(values["pollInterval"])
+	pollIntervalDurationString, err = coerce.ToString(values["pollIntervalDurationString"])
 	if err != nil {
 		return err
 	}
@@ -101,99 +164,124 @@ func (hs *HandlerSettings) FromMap(values map[string]interface{}) error {
 		return err
 	}
 
-	requestTimeout, err = coerce.ToString(values["requestTimeout"])
+	requestTimeoutDurationString, err = coerce.ToString(values["requestTimeoutDurationString"])
 	if err != nil {
 		return err
 	}
 
-	timeout, err = coerce.ToString(values["timeout"])
+	timeoutDurationString, err = coerce.ToString(values["timeoutDurationString"])
 	if err != nil {
 		return err
 	}
 
 	hs.JobConcurrency = jobConcurrency
 	hs.MaxActiveJobs = maxActiveJobs
-	hs.PollInterval = pollInterval
+	hs.PollIntervalDurationString = pollIntervalDurationString
 	hs.PollThreshold = pollThreshold
-	hs.RequestTimeout = requestTimeout
-	hs.Timeout = timeout
+	hs.RequestTimeoutDurationString = requestTimeoutDurationString
+	hs.TimeoutDurationString = timeoutDurationString
 	return nil
 }
 
 // ToMap method of HandlerSettings
 func (hs *HandlerSettings) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"jobConcurrency": hs.JobConcurrency,
-		"maxActiveJobs": hs.MaxActiveJobs,
-		"pollInterval": hs.PollInterval,
-		"pollThreshold": hs.PollThreshold,
-		"requestTimeout": hs.RequestTimeout,
-		"timeout": hs.Timeout,
+		"jobConcurrency":               hs.JobConcurrency,
+		"maxActiveJobs":                hs.MaxActiveJobs,
+		"pollIntervalDurationString":   hs.PollIntervalDurationString,
+		"pollThreshold":                hs.PollThreshold,
+		"requestTimeoutDurationString": hs.RequestTimeoutDurationString,
+		"timeoutDurationString":        hs.TimeoutDurationString,
 	}
 }
 
 // Output struct
 type Output struct {
-	Status string `md:"status,required"`
-	Result interface{} `md:"result,required"`
+	JobKey         int64                  `md:"jobKey"`
+	Headers        map[string]interface{} `md:"headers"`
+	InputVariables map[string]interface{} `md:"inputVarialbes"`
 }
 
 // FromMap method of Output
 func (o *Output) FromMap(values map[string]interface{}) error {
 	var (
-		err  error
-		status string
-		result map[string]interface{}
+		err            error
+		jobKey         int64
+		headers        map[string]interface{}
+		inputVariables map[string]interface{}
 	)
 
-	status, err = coerce.ToString(values["status"])
+	jobKey, err = coerce.ToInt64(values["jobKey"])
 	if err != nil {
 		return err
 	}
 
-	result, err = coerce.ToObject(values["result"])
+	headers, err = coerce.ToObject(values["headers"])
 	if err != nil {
 		return err
 	}
 
-	o.Status = status
-	o.Result = result
+	inputVariables, err = coerce.ToObject(values["inputVariables"])
+	if err != nil {
+		return err
+	}
+
+	o.JobKey = jobKey
+	o.Headers = headers
+	o.InputVariables = inputVariables
 	return nil
 }
 
 // ToMap method of Output
 func (o *Output) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"status": o.Status,
-		"result": o.Result,
+		"jobKey":         o.JobKey,
+		"headers":        o.Headers,
+		"inputVariables": o.InputVariables,
 	}
 }
 
 // Reply struct
 type Reply struct {
-	Status string      `md:"status,required"`
-	Result interface{} `md:"result,required"`
+	ApplicationMessageType string                 `md:"applicationMessageType"`
+	ApplicationMessageCode string                 `md:"applicationMessageCode"`
+	ApplicationMessageText string                 `md:"applicationMessageText"`
+	OutputVariables        map[string]interface{} `md:"outputVariables"`
 }
 
 // FromMap method of Reply
 func (r *Reply) FromMap(values map[string]interface{}) error {
 	var (
-		err    error
-		status string
-		result interface{}
+		err                    error
+		applicationMessageType string
+		applicationMessageCode string
+		applicationMessageText string
+		outputVariables        map[string]interface{}
 	)
 
-	status, err = coerce.ToString(values["status"])
+	applicationMessageType, err = coerce.ToString(values["applicationMessageType"])
 	if err != nil {
 		return err
 	}
-	r.Status = status
+	r.ApplicationMessageType = applicationMessageType
 
-	result, err = coerce.ToAny(values["result"])
+	applicationMessageCode, err = coerce.ToString(values["applicationMessageCode"])
 	if err != nil {
 		return err
 	}
-	r.Result = result
+	r.ApplicationMessageCode = applicationMessageCode
+
+	applicationMessageText, err = coerce.ToString(values["applicationMessageText"])
+	if err != nil {
+		return err
+	}
+	r.ApplicationMessageText = applicationMessageText
+
+	outputVariables, err = coerce.ToObject(values["outputVariables"])
+	if err != nil {
+		return err
+	}
+	r.OutputVariables = outputVariables
 
 	return nil
 }
@@ -201,7 +289,9 @@ func (r *Reply) FromMap(values map[string]interface{}) error {
 // ToMap method of Reply
 func (r *Reply) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"status": r.Status,
-		"result": r.Result,
+		"applicationMessageType": r.ApplicationMessageType,
+		"applicationMessageCode": r.ApplicationMessageCode,
+		"applicationMessageText": r.ApplicationMessageText,
+		"outputVariables":        r.OutputVariables,
 	}
 }

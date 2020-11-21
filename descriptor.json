@@ -9,29 +9,74 @@
     {
       "name": "zeebeBrokerHost",
       "type": "string",
-      "required": true
+      "required": true,
+      "default": "localhost"
     },
     {
       "name": "zeebeBrokerPort",
       "type": "integer",
-      "required": true
+      "required": true,
+      "default": 26500
     },
     {
       "name": "serviceType",
       "type": "string",
-      "required": true
+      "required": true,
+      "default": "gohub-workflow-task"
     },
     {
       "name": "usePlainTextConnection",
       "type": "boolean",
       "required": true,
       "default": true
+    },
+    {
+      "name": "caCertificatePath",
+      "type": "string",
+      "required": false,
+      "default": ""
+    },
+    {
+      "name": "token",
+      "type": "string",
+      "required": false,
+      "default": ""
+    },
+    {
+      "name": "clientID",
+      "type": "string",
+      "required": false,
+      "default": ""
+    },
+    {
+      "name": "clientSecret",
+      "type": "string",
+      "required": false,
+      "default": ""
+    },   
+    {
+      "name": "audienceEndpoint",
+      "type": "string",
+      "required": false,
+      "default": ""
+    },   
+    {
+      "name": "authorizationServerUrl",
+      "type": "string",
+      "required": false,
+      "default": ""
+    },
+    {
+      "name": "timeoutDurationString",
+      "type": "string",
+      "required": false,
+      "default": ""
     }
   ],
   "handler": {
     "settings": [
       {
-        "name": "concurrency",
+        "name": "jobConcurrency",
         "type": "integer",
         "description": "Job concurrency"
       },
@@ -39,29 +84,67 @@
         "name": "maxActiveJobs",
         "type": "integer",
         "description": "Max active jobs"
+      },
+      {
+        "name": "pollIntervalDurationString",
+        "type": "string",
+        "description": "time.Duration format string for poll interval"
+      },
+      {
+        "name": "pollThreshold",
+        "type": "float",
+        "description": "poll threshold"
+      },
+      {
+        "name": "requestTimeoutDurationString",
+        "type": "string",
+        "description": "time.Duration format string for request timeout"
+      },
+      {
+        "name": "timeoutDurationString",
+        "type": "string",
+        "description": "time.Duration format string for timeout"
       }
     ]
   },
   "output": [
     {
-      "name": "status",
-      "type": "text",
+      "name": "jobKey",
+      "type": "integer",
       "required": true
     },
     {
-      "name": "result",
-      "type": "any"
+      "name": "headers",
+      "type": "object",
+      "required": false
+    },
+    {
+      "name": "inputVariables",
+      "type": "object",
+      "required": false
     }
   ],
   "reply": [
     {
-      "name": "status",
-      "type": "text",
+      "name": "applicationMessageType",
+      "type": "string",
+      "allowed": ["INFO", "WARNING", "ERROR"],
       "required": true
     },
     {
-      "name": "result",
-      "type": "any"
+      "name": "applicationMessageCode",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "applicationMesageText",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "outputVariables",
+      "type": "object",
+      "required": false
     }
   ]
 }
