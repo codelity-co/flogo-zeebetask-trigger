@@ -19,12 +19,6 @@
       "default": 26500
     },
     {
-      "name": "serviceType",
-      "type": "string",
-      "required": true,
-      "default": "gohub-workflow-task"
-    },
-    {
       "name": "usePlainTextConnection",
       "type": "boolean",
       "required": true,
@@ -75,6 +69,11 @@
   ],
   "handler": {
     "settings": [
+      {
+        "name": "serviceType",
+        "type": "string",
+        "required": true
+      },
       {
         "name": "jobConcurrency",
         "type": "integer",
