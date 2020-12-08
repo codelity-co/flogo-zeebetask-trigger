@@ -8,7 +8,6 @@ import (
 type Settings struct {
 	ZeebeBrokerHost        string `md:"zeebeBrokerHost,required"`
 	ZeebeBrokerPort        int    `md:"zeebeBrokerPort,required"`
-	ServiceType            string `md:"serviceType,required"`
 	UsePlainTextConnection bool   `md:"usePlainTextConnection"`
 	CaCertificatePath      string `md:"caCertificatePath"`
 	Token                  string `md:"token"`
@@ -25,7 +24,6 @@ func (s *Settings) FromMap(values map[string]interface{}) error {
 		err                    error
 		zeebeBrokerHost        string
 		zeebeBrokerPort        int
-		serviceType            string
 		usePlainTextConnection bool
 		caCertificatePath      string
 		token                  string
@@ -47,12 +45,6 @@ func (s *Settings) FromMap(values map[string]interface{}) error {
 		return err
 	}
 	s.ZeebeBrokerPort = zeebeBrokerPort
-
-	serviceType, err = coerce.ToString(values["serviceType"])
-	if err != nil {
-		return err
-	}
-	s.ServiceType = serviceType
 
 	usePlainTextConnection, err = coerce.ToBool(values["usePlainTextConnection"])
 	if err != nil {
@@ -110,7 +102,6 @@ func (s *Settings) ToMap() map[string]interface{} {
 	return map[string]interface{}{
 		"zeebeBrokerHost":        s.ZeebeBrokerHost,
 		"zeebeBrokerPort":        s.ZeebeBrokerPort,
-		"serviceType":            s.ServiceType,
 		"usePlainTextConnection": s.UsePlainTextConnection,
 		"caCertificatePath":      s.CaCertificatePath,
 		"token":                  s.Token,
@@ -124,6 +115,7 @@ func (s *Settings) ToMap() map[string]interface{} {
 
 // HandlerSettings struct
 type HandlerSettings struct {
+	ServiceType                  string  `md:"serviceType,required"`
 	JobConcurrency               int     `md:"jobConcurrency"`
 	MaxActiveJobs                int     `md:"maxActiveJobs"`
 	PollIntervalDurationString   string  `md:"pollIntervalDurationString"`
@@ -136,6 +128,7 @@ type HandlerSettings struct {
 func (hs *HandlerSettings) FromMap(values map[string]interface{}) error {
 	var (
 		err                          error
+		serviceType                  string
 		jobConcurrency               int
 		maxActiveJobs                int
 		pollIntervalDurationString   string
@@ -143,6 +136,11 @@ func (hs *HandlerSettings) FromMap(values map[string]interface{}) error {
 		requestTimeoutDurationString string
 		timeoutDurationString        string
 	)
+
+	serviceType, err = coerce.ToString(values["serviceType"])
+	if err != nil {
+		return err
+	}
 
 	jobConcurrency, err = coerce.ToInt(values["jobConcurrency"])
 	if err != nil {
@@ -174,6 +172,7 @@ func (hs *HandlerSettings) FromMap(values map[string]interface{}) error {
 		return err
 	}
 
+	hs.ServiceType = serviceType
 	hs.JobConcurrency = jobConcurrency
 	hs.MaxActiveJobs = maxActiveJobs
 	hs.PollIntervalDurationString = pollIntervalDurationString
@@ -186,6 +185,7 @@ func (hs *HandlerSettings) FromMap(values map[string]interface{}) error {
 // ToMap method of HandlerSettings
 func (hs *HandlerSettings) ToMap() map[string]interface{} {
 	return map[string]interface{}{
+		"serviceType":                  hs.ServiceType,
 		"jobConcurrency":               hs.JobConcurrency,
 		"maxActiveJobs":                hs.MaxActiveJobs,
 		"pollIntervalDurationString":   hs.PollIntervalDurationString,

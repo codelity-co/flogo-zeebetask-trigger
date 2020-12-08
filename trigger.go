@@ -32,9 +32,9 @@ func (f *Factory) Metadata() *trigger.Metadata {
 
 // Trigger struct
 type Trigger struct {
-	triggerConfig *trigger.Config
+	triggerConfig      *trigger.Config
 	triggerInitContext trigger.InitContext
-	zeebeHandlers  []*Handler
+	zeebeHandlers      []*Handler
 }
 
 // Metadata implements trigger.Trigger.Metadata
@@ -72,7 +72,7 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 		logger.Debugf("handlerSettings: %v", handlerSettings)
 		logger.Infof("Mapped handler settings successfully")
 
-    zeebeClientConfig := &zbc.ClientConfig{
+		zeebeClientConfig := &zbc.ClientConfig{
 			GatewayAddress:         fmt.Sprintf("%v:%v", s.ZeebeBrokerHost, s.ZeebeBrokerPort),
 			UsePlaintextConnection: s.UsePlainTextConnection,
 		}
@@ -92,12 +92,11 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 
 		// Create Trigger Handler
 		zeebeHandler := &Handler{
-			triggerInitContext: ctx,
-			zeebeClient: zeebeClient,
-			serviceType:   s.ServiceType,
-			stopChannel:   stopChannel,
+			triggerInitContext:     ctx,
+			zeebeClient:            zeebeClient,
+			stopChannel:            stopChannel,
 			triggerHandlerSettings: handlerSettings,
-			triggerHandler: handler,
+			triggerHandler:         handler,
 		}
 
 		// Append handler
@@ -134,19 +133,18 @@ func (t *Trigger) Stop() error {
 
 // Handler is Zeebe task handler
 type Handler struct {
-	triggerInitContext trigger.InitContext
-	zeebeClient   zbc.Client
-	serviceType   string
-	stopChannel   chan bool
-	jobWorker 		worker.JobWorker
+	triggerInitContext     trigger.InitContext
+	zeebeClient            zbc.Client
+	stopChannel            chan bool
+	jobWorker              worker.JobWorker
 	triggerHandlerSettings *HandlerSettings
-	triggerHandler trigger.Handler
+	triggerHandler         trigger.Handler
 }
 
 // Start starts the handler
 func (h *Handler) Start() error {
 
-	step3 := h.zeebeClient.NewJobWorker().JobType(h.serviceType).Handler(h.handleJob)
+	step3 := h.zeebeClient.NewJobWorker().JobType(h.triggerHandlerSettings.ServiceType).Handler(h.handleJob)
 
 	if h.triggerHandlerSettings.JobConcurrency > 0 {
 		step3 = step3.Concurrency(h.triggerHandlerSettings.JobConcurrency)
@@ -171,7 +169,7 @@ func (h *Handler) Start() error {
 		step3 = step3.PollThreshold(h.triggerHandlerSettings.PollThreshold)
 	}
 
-	if h.triggerHandlerSettings.RequestTimeoutDurationString != ""  {
+	if h.triggerHandlerSettings.RequestTimeoutDurationString != "" {
 		requestTimeout, err := time.ParseDuration(h.triggerHandlerSettings.RequestTimeoutDurationString)
 		if err != nil {
 			return err
@@ -180,7 +178,7 @@ func (h *Handler) Start() error {
 		step3 = step3.RequestTimeout(requestTimeout)
 	}
 
-	if h.triggerHandlerSettings.TimeoutDurationString != ""  {
+	if h.triggerHandlerSettings.TimeoutDurationString != "" {
 		timeout, err := time.ParseDuration(h.triggerHandlerSettings.TimeoutDurationString)
 		if err != nil {
 			return err
@@ -239,7 +237,7 @@ func (h *Handler) handleJob(client worker.JobClient, job entities.Job) {
 		failJob(client, job, err)
 		return
 	}
-	
+
 	request, err := client.NewCompleteJobCommand().JobKey(jobKey).VariablesFromMap(result)
 	if err != nil {
 		// failed to set the updated variables
