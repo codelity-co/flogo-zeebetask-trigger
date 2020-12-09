@@ -9,7 +9,7 @@
     {
       "name": "enabled",
       "type": "boolean",
-      "value": false,
+      "default": false,
       "allowed": [true, false],
       "description": "Enable Zeebe Workflow Trigger"
     },
@@ -17,21 +17,21 @@
       "name": "zeebeBrokerHost",
       "type": "string",
       "required": true,
-      "value": "localhost",
+      "default": "localhost",
       "description": "Zeebe Host Address"
     },
     {
       "name": "zeebeBrokerPort",
       "type": "integer",
       "required": true,
-      "value": 26500,
+      "default": 26500,
       "description": "Zeebe Gateway or Broker port"
     },
     {
       "name": "usePlainTextConnection",
       "type": "boolean",
       "required": true,
-      "value": true,
+      "default": true,
       "allowed": [true, false],
       "description": "Use plain text connection"
     },
@@ -39,49 +39,49 @@
       "name": "caCertificatePath",
       "type": "string",
       "required": false,
-      "value": "",
+      "default": "",
       "description": "CA cert file path"
     },
     {
       "name": "token",
       "type": "string",
       "required": false,
-      "value": "",
+      "default": "",
       "description": "Zeebe JWT Token"
     },
     {
       "name": "clientID",
       "type": "string",
       "required": false,
-      "value": "",
+      "default": "",
       "description": "Client ID"
     },
     {
       "name": "clientSecret",
       "type": "string",
       "required": false,
-      "value": "",
+      "default": "",
       "description": "Client Secret"
     },   
     {
       "name": "audienceEndpoint",
       "type": "string",
       "required": false,
-      "value": "",
+      "default": "",
       "description": "OAuth2 Callback Endpoint"
     },   
     {
       "name": "authorizationServerUrl",
       "type": "string",
       "required": false,
-      "value": "",
+      "default": "",
       "description": "OAuth2 Server URL"
     },
     {
       "name": "timeoutDurationString",
       "type": "string",
       "required": false,
-      "value": "",
+      "default": "",
       "description": "Connection Timeout duration string"
     }
   ],
