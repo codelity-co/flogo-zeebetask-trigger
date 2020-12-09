@@ -6,6 +6,7 @@ import (
 
 // Settings struct
 type Settings struct {
+	Enabled								 bool   `md:"enabbled,required"`
 	ZeebeBrokerHost        string `md:"zeebeBrokerHost,required"`
 	ZeebeBrokerPort        int    `md:"zeebeBrokerPort,required"`
 	UsePlainTextConnection bool   `md:"usePlainTextConnection"`
@@ -22,6 +23,7 @@ type Settings struct {
 func (s *Settings) FromMap(values map[string]interface{}) error {
 	var (
 		err                    error
+		enabled                bool
 		zeebeBrokerHost        string
 		zeebeBrokerPort        int
 		usePlainTextConnection bool
@@ -33,6 +35,12 @@ func (s *Settings) FromMap(values map[string]interface{}) error {
 		authorizationServerUrl string
 		timeoutDurationString  string
 	)
+
+	enabled, err = coerce.ToBool(values["enabled"])
+	if err != nil {
+		return err
+	}
+	s.Enabled = enabled
 
 	zeebeBrokerHost, err = coerce.ToString(values["zeebeBrokerHost"])
 	if err != nil {
@@ -100,6 +108,7 @@ func (s *Settings) FromMap(values map[string]interface{}) error {
 // ToMap method of Settings
 func (s *Settings) ToMap() map[string]interface{} {
 	return map[string]interface{}{
+		"enabled":                s.Enabled,
 		"zeebeBrokerHost":        s.ZeebeBrokerHost,
 		"zeebeBrokerPort":        s.ZeebeBrokerPort,
 		"usePlainTextConnection": s.UsePlainTextConnection,
