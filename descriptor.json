@@ -145,7 +145,7 @@
     {
       "name": "applicationMessageType",
       "type": "string",
-      "allowed": ["INFO", "WARNING", "ERROR"],
+      "allowed": ["SUCCESS", "WARNING", "ERROR"],
       "required": true
     },
     {
