@@ -34,6 +34,7 @@ func (f *Factory) Metadata() *trigger.Metadata {
 type Trigger struct {
 	triggerConfig      *trigger.Config
 	triggerInitContext trigger.InitContext
+	triggerSettings    *Settings
 	zeebeHandlers      []*Handler
 }
 
@@ -54,11 +55,18 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 	logger := ctx.Logger()
 
 	s := &Settings{}
+
 	err = s.FromMap(t.triggerConfig.Settings)
 	if err != nil {
 		return err
 	}
 	logger.Debugf("Settings: %v", s)
+
+	t.triggerSettings = s
+
+	if !s.Enabled {
+		return nil
+	}
 
 	// Init handlers
 	for _, handler := range ctx.GetHandlers() {
@@ -109,6 +117,10 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 
 // Start implements util.Managed.Start
 func (t *Trigger) Start() error {
+	if !t.triggerSettings.Enabled {
+		return nil
+	}
+
 	for _, handler := range t.zeebeHandlers {
 		_ = handler.Start()
 	}
@@ -118,6 +130,11 @@ func (t *Trigger) Start() error {
 // Stop implements util.Managed.Stop
 func (t *Trigger) Stop() error {
 	var err error
+
+	if !t.triggerSettings.Enabled {
+		return nil
+	}
+	
 	for _, handler := range t.zeebeHandlers {
 		handler.jobWorker.Close()
 		handler.jobWorker.AwaitClose()
