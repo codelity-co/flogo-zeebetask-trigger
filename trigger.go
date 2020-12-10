@@ -118,16 +118,24 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 
 // Start implements util.Managed.Start
 func (t *Trigger) Start() error {
+
+	logger := t.triggerInitContext.Logger()
+
+	logger.Debugf("t.triggerSettings.Enabled: %v", t.triggerSettings.Enabled)
 	if !t.triggerSettings.Enabled {
-		return nil
+		err := errors.New("Trigger is disabled")
+		logger.Info(err)
+		return err
 	}
 
 	for _, handler := range t.zeebeHandlers {
 		err := handler.Start()
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -161,6 +169,8 @@ type Handler struct {
 // Start starts the handler
 func (h *Handler) Start() error {
 
+	logger := h.triggerInitContext.Logger()
+
 	step3 := h.zeebeClient.NewJobWorker().JobType(h.triggerHandlerSettings.ServiceType).Handler(h.handleJob)
 
 	if h.triggerHandlerSettings.JobConcurrency > 0 {
@@ -175,6 +185,7 @@ func (h *Handler) Start() error {
 
 		pollInterval, err := time.ParseDuration(h.triggerHandlerSettings.PollIntervalDurationString)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -189,6 +200,7 @@ func (h *Handler) Start() error {
 	if h.triggerHandlerSettings.RequestTimeoutDurationString != "" {
 		requestTimeout, err := time.ParseDuration(h.triggerHandlerSettings.RequestTimeoutDurationString)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -198,6 +210,7 @@ func (h *Handler) Start() error {
 	if h.triggerHandlerSettings.TimeoutDurationString != "" {
 		timeout, err := time.ParseDuration(h.triggerHandlerSettings.TimeoutDurationString)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
