@@ -238,10 +238,11 @@ func (h *Handler) Stop() error {
 	logger := h.triggerInitContext.Logger()
 
 	logger.Debug("Stopping hanlder...")
-	h.stopChannel <- true
+
 	//stop servers/services if necessary
 	h.jobWorker.Close()
 	logger.Debug("Handler has been stopped")
+
 	return nil
 }
 
