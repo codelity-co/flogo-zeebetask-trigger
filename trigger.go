@@ -2,6 +2,7 @@ package zeebetask
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -65,7 +66,7 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 	t.triggerSettings = s
 
 	if !s.Enabled {
-		return nil
+		return errors.New("Zeebe trigger is disabled")
 	}
 
 	// Init handlers
