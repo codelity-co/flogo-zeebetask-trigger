@@ -97,13 +97,11 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 
 		// Create Stop Channel
 		logger.Debugf("Registering trigger handler...")
-		stopChannel := make(chan bool)
 
 		// Create Trigger Handler
 		zeebeHandler := &Handler{
 			triggerInitContext:     ctx,
 			zeebeClient:            zeebeClient,
-			stopChannel:            stopChannel,
 			triggerHandlerSettings: handlerSettings,
 			triggerHandler:         handler,
 		}
@@ -160,7 +158,6 @@ func (t *Trigger) Stop() error {
 type Handler struct {
 	triggerInitContext     trigger.InitContext
 	zeebeClient            zbc.Client
-	stopChannel            chan bool
 	jobWorker              worker.JobWorker
 	triggerHandlerSettings *HandlerSettings
 	triggerHandler         trigger.Handler
