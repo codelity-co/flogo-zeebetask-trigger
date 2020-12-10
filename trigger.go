@@ -131,10 +131,6 @@ func (t *Trigger) Start() error {
 func (t *Trigger) Stop() error {
 	var err error
 
-	if !t.triggerSettings.Enabled {
-		return nil
-	}
-	
 	for _, handler := range t.zeebeHandlers {
 		handler.jobWorker.Close()
 		handler.jobWorker.AwaitClose()
