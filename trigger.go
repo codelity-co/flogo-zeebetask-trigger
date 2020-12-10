@@ -171,18 +171,24 @@ func (h *Handler) Start() error {
 
 	logger := h.triggerInitContext.Logger()
 
+	logger.Debug("Handler starting...")
+
 	step3 := h.zeebeClient.NewJobWorker().JobType(h.triggerHandlerSettings.ServiceType).Handler(h.handleJob)
+	logger.Debug("Zeebe handler has been created")
 
 	if h.triggerHandlerSettings.JobConcurrency > 0 {
+		logger.Debugf("Setting Job Concurrency: %v", h.triggerHandlerSettings.JobConcurrency)
 		step3 = step3.Concurrency(h.triggerHandlerSettings.JobConcurrency)
 	}
 
 	if h.triggerHandlerSettings.MaxActiveJobs > 0 {
+		logger.Debugf("Setting Max Active Jobs: %v", h.triggerHandlerSettings.MaxActiveJobs)
 		step3 = step3.MaxJobsActive(h.triggerHandlerSettings.JobConcurrency)
 	}
 
 	if h.triggerHandlerSettings.PollIntervalDurationString != "" {
 
+		logger.Debugf("Setting Poll Interval: %v", h.triggerHandlerSettings.PollIntervalDurationString)
 		pollInterval, err := time.ParseDuration(h.triggerHandlerSettings.PollIntervalDurationString)
 		if err != nil {
 			logger.Error(err)
@@ -194,10 +200,12 @@ func (h *Handler) Start() error {
 	}
 
 	if h.triggerHandlerSettings.PollThreshold > 0.0 {
+		logger.Debugf("Setting Poll Threshold: %v", h.triggerHandlerSettings.PollThreshold)
 		step3 = step3.PollThreshold(h.triggerHandlerSettings.PollThreshold)
 	}
 
 	if h.triggerHandlerSettings.RequestTimeoutDurationString != "" {
+		logger.Debugf("Setting Request Timeout: %v", h.triggerHandlerSettings.RequestTimeoutDurationString)
 		requestTimeout, err := time.ParseDuration(h.triggerHandlerSettings.RequestTimeoutDurationString)
 		if err != nil {
 			logger.Error(err)
@@ -208,6 +216,7 @@ func (h *Handler) Start() error {
 	}
 
 	if h.triggerHandlerSettings.TimeoutDurationString != "" {
+		logger.Debugf("Setting Timeout: %v", h.triggerHandlerSettings.TimeoutDurationString)
 		timeout, err := time.ParseDuration(h.triggerHandlerSettings.TimeoutDurationString)
 		if err != nil {
 			logger.Error(err)
@@ -217,16 +226,22 @@ func (h *Handler) Start() error {
 		step3 = step3.Timeout(timeout)
 	}
 
+	logger.Debug("Opening jobWorker")
 	h.jobWorker = step3.Open()
+	logger.Debug("Opened jobWorker")
 
 	return nil
 }
 
 // Stop implements util.Managed.Stop
 func (h *Handler) Stop() error {
+	logger := h.triggerInitContext.Logger()
+
+	logger.Debug("Stopping hanlder...")
 	h.stopChannel <- true
 	//stop servers/services if necessary
 	h.jobWorker.Close()
+	logger.Debug("Handler has been stopped")
 	return nil
 }
 
