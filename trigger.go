@@ -123,7 +123,10 @@ func (t *Trigger) Start() error {
 	}
 
 	for _, handler := range t.zeebeHandlers {
-		_ = handler.Start()
+		err := handler.Start()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
