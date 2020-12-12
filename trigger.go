@@ -36,7 +36,9 @@ type Trigger struct {
 	triggerConfig      *trigger.Config
 	triggerInitContext trigger.InitContext
 	triggerSettings    *Settings
-	zeebeHandlers      []*Handler
+	zeebeClientConfig  *zbc.ClientConfig
+	zeebeClient        zbc.Client
+	handlers           map[string]*Handler
 }
 
 // Metadata implements trigger.Trigger.Metadata
@@ -69,6 +71,20 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 		return errors.New("Zeebe trigger is disabled")
 	}
 
+	t.zeebeClientConfig = &zbc.ClientConfig{
+		GatewayAddress:         fmt.Sprintf("%v:%v", s.ZeebeBrokerHost, s.ZeebeBrokerPort),
+		UsePlaintextConnection: s.UsePlainTextConnection,
+	}
+
+	// Connect to Zeebe broker
+	t.zeebeClient, err = zbc.NewClient(t.zeebeClientConfig)
+	if err != nil {
+		logger.Errorf("Zeebe broker connection error: %v", err)
+		return err
+	}
+
+	t.handlers = make(map[string]*Handler)
+
 	// Init handlers
 	for _, handler := range ctx.GetHandlers() {
 
@@ -81,34 +97,18 @@ func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 		logger.Debugf("handlerSettings: %v", handlerSettings)
 		logger.Infof("Mapped handler settings successfully")
 
-		zeebeClientConfig := &zbc.ClientConfig{
-			GatewayAddress:         fmt.Sprintf("%v:%v", s.ZeebeBrokerHost, s.ZeebeBrokerPort),
-			UsePlaintextConnection: s.UsePlainTextConnection,
-		}
-
 		//TODO: add credential provider
-
-		// Connect to Zeebe broker
-		zeebeClient, err = zbc.NewClient(zeebeClientConfig)
-		if err != nil {
-			logger.Errorf("Zeebe broker connection error: %v", err)
-			return err
-		}
 
 		// Create Stop Channel
 		logger.Debugf("Registering trigger handler...")
 
 		// Create Trigger Handler
-		zeebeHandler := &Handler{
+		t.handlers[handlerSettings.ServiceType] = &Handler{
+			trigger:                t,
 			triggerInitContext:     ctx,
-			zeebeClient:            zeebeClient,
 			triggerHandlerSettings: handlerSettings,
 			triggerHandler:         handler,
 		}
-
-		// Append handler
-		t.zeebeHandlers = append(t.zeebeHandlers, zeebeHandler)
-		logger.Debugf("Registered trigger handler successfully")
 	}
 
 	return nil
@@ -126,7 +126,7 @@ func (t *Trigger) Start() error {
 		return err
 	}
 
-	for _, handler := range t.zeebeHandlers {
+	for _, handler := range t.handlers {
 		err := handler.Start()
 		if err != nil {
 			logger.Error(err)
@@ -141,7 +141,7 @@ func (t *Trigger) Start() error {
 func (t *Trigger) Stop() error {
 	var err error
 
-	for _, handler := range t.zeebeHandlers {
+	for _, handler := range t.handlers {
 		handler.jobWorker.Close()
 		handler.jobWorker.AwaitClose()
 		err = handler.Stop()
@@ -149,18 +149,18 @@ func (t *Trigger) Stop() error {
 			t.triggerInitContext.Logger().Errorf("Trigger stop error: %v", err)
 			return err
 		}
-		handler.zeebeClient.Close()
 	}
+	t.zeebeClient.Close()
 	return nil
 }
 
 // Handler is Zeebe task handler
 type Handler struct {
 	triggerInitContext     trigger.InitContext
-	zeebeClient            zbc.Client
 	jobWorker              worker.JobWorker
 	triggerHandlerSettings *HandlerSettings
 	triggerHandler         trigger.Handler
+	trigger                *Trigger
 }
 
 // Start starts the handler
@@ -170,7 +170,7 @@ func (h *Handler) Start() error {
 
 	logger.Debug("Handler starting...")
 
-	step3 := h.zeebeClient.NewJobWorker().JobType(h.triggerHandlerSettings.ServiceType).Handler(h.handleJob)
+	step3 := h.trigger.zeebeClient.NewJobWorker().JobType(h.triggerHandlerSettings.ServiceType).Handler(h.handleJob)
 	logger.Debug("Zeebe handler has been created")
 
 	if h.triggerHandlerSettings.JobConcurrency > 0 {
