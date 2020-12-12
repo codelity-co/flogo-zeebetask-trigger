@@ -49,10 +49,7 @@ func (t *Trigger) Metadata() *trigger.Metadata {
 // Initialize method of Trigger
 func (t *Trigger) Initialize(ctx trigger.InitContext) error {
 
-	var (
-		err         error
-		zeebeClient zbc.Client
-	)
+	var err error
 
 	t.triggerInitContext = ctx
 	logger := ctx.Logger()
