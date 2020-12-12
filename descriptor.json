@@ -143,22 +143,6 @@
   ],
   "reply": [
     {
-      "name": "applicationMessageType",
-      "type": "string",
-      "allowed": ["SUCCESS", "WARNING", "ERROR"],
-      "required": true
-    },
-    {
-      "name": "applicationMessageCode",
-      "type": "string",
-      "required": true
-    },
-    {
-      "name": "applicationMesageText",
-      "type": "string",
-      "required": true
-    },
-    {
       "name": "outputVariables",
       "type": "object",
       "required": false
